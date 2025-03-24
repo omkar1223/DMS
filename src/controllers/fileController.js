@@ -5,6 +5,7 @@ const {
   Folder,
 } = require("/Users/user/Documents/document-management-system/models/Folder");
 const uploadFile = require("../services/fileService");
+const { Op } = require("sequelize");
 
 const uploadFileToCloud = async (req, res) => {
   const folderId = req.params.folderId;
@@ -58,4 +59,103 @@ const uploadFileToCloud = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
+};
+
+const updateFileDescription = async (req, res) => {
+  const folderId = req.params.folderId;
+  const fileId = req.params.fileId;
+
+  try {
+    const folder = await Folder.findByPk(folderId);
+    if (!folder) {
+      return res.status(404).json({ msg: "Folder not found" });
+    }
+
+    const file = await File.findByPk(fileId);
+    if (!file) {
+      return res.status(404).json({ msg: "File not found" });
+    }
+    const { description } = req.body;
+    if (!description) {
+      return res.status(404).json({ msg: "description is needed" });
+    }
+    file.description = description;
+
+    await file.save();
+    return res.status(200).json({
+      msg: "File description succesfully updated",
+      file: file,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const deleteFile = async (req, res) => {
+  const { folderId } = req.params.folderId;
+  const { fileId } = req.params.fileId;
+
+  try {
+    const folder = await Folder.findByPk(folderId);
+    if (!folder) {
+      return res.status(404), json({ msg: "folder is not present" });
+    }
+    const file = await File.findByPk(fileId);
+    if (!file) {
+      return res.status(404), json({ msg: "file is not present" });
+    }
+    await file.destroy();
+
+    return res.status(200).json({ msg: "File deleted successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const getAllFilesByFolder = async (req, res) => {
+  const { folderId } = req.params.folderId;
+  const { sort } = req.query.sort;
+  let folderFiles;
+  try {
+    if (sort === "size" || sort === "uploadedAt") {
+      folderFiles = await File.findAll({
+        where: { folderId: folderId },
+        order: [[sort, "ASC"]],
+      });
+    } else {
+      folderFiles = await File.findAll({ where: { folderId: folderId } });
+      return res.status(200).json({ files: folderFiles });
+    }
+    return res.status(200).json(folderFiles);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+const getFilesByType = async (req, res) => {
+  const { type } = req.query.type;
+  //let files;
+  try {
+    let files;
+    if (!type) {
+      files = await File.findAll({});
+    } else {
+      files = await File.findAll({
+        where: { type: { [Op.like]: `%${type}$%` } },
+      });
+    }
+
+    return res.status(200).json(files);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+module.exports = {
+  uploadFileToCloud,
+  updateFileDescription,
+  deleteFile,
+  getAllFilesByFolder,
+  getFilesByType,
 };
