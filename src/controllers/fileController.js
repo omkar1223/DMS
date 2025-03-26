@@ -1,10 +1,6 @@
-const {
-  File,
-} = require("/Users/user/Documents/document-management-system/models/File");
-const {
-  Folder,
-} = require("/Users/user/Documents/document-management-system/models/Folder");
-const uploadFile = require("../services/fileService");
+const File = require("../models/File");
+const Folder = require("../models/Folder");
+const { uploadFile } = require("../services/fileService");
 const { Op } = require("sequelize");
 
 const uploadFileToCloud = async (req, res) => {
@@ -46,7 +42,7 @@ const uploadFileToCloud = async (req, res) => {
 
     const fileUpload = await File.create({
       folderId: folderId,
-      name: file.filename,
+      name: file.originalname,
       description: description,
       type: file.mimetype,
       size: file.size,
@@ -114,10 +110,10 @@ const deleteFile = async (req, res) => {
 };
 
 const getAllFilesByFolder = async (req, res) => {
-  const { folderId } = req.params.folderId;
-  const { sort } = req.query.sort;
-  let folderFiles;
   try {
+    const { folderId } = req.params;
+    const { sort } = req.query;
+    let folderFiles;
     if (sort === "size" || sort === "uploadedAt") {
       folderFiles = await File.findAll({
         where: { folderId: folderId },

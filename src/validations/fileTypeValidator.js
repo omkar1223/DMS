@@ -1,3 +1,5 @@
+const path = require("path");
+
 const fileTypeValidator = (file) => {
   console.log(file);
   const filetypes = /csv|img|pdf|ppt/;

@@ -4,7 +4,9 @@ const { unlink } = require("fs");
 const uploadFile = async (file) => {
   try {
     console.log(file);
-    const cloud_response = await cloudinary.uploader.upload(file.path);
+    const cloud_response = await cloudinary.uploader.upload(file.path, {
+      resource_type: "raw", // Specify raw resource type
+    });
     unlink(file.path, (err) => {
       if (err) {
         console.log(err);
@@ -13,7 +15,7 @@ const uploadFile = async (file) => {
     console.log(cloud_response);
     return cloud_response;
   } catch (error) {
-    console.error(error);
+    console.error({ error: error.message });
   }
 };
 

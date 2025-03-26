@@ -1,6 +1,8 @@
+const Folder = require("../models/Folder");
 const {
-  Folder,
-} = require("/Users/user/Documents/document-management-system/models/Folder");
+  validateFolder,
+  validateFolderId,
+} = require("../validations/folderValidation");
 
 const createFolder = async (req, res) => {
   const { name, type, maxFileLimit } = req.body;
@@ -16,15 +18,15 @@ const createFolder = async (req, res) => {
       res.status(404).json({ msg: "Folder already exists" });
     }
 
-    const folder = Folder.create({
+    const folder = await Folder.create({
       name: name,
       type: type,
-      maxFileLimit: maxFileLimit,
+      maxFileLimit: parseInt(maxFileLimit),
     });
 
     return res.status(200).json({
       message: "Folder Created Successfully",
-      folder,
+      folder: folder,
     });
   } catch (error) {
     return res.status(500).json({ msg: error.message });
@@ -38,30 +40,36 @@ const updateFolder = async (req, res) => {
     let error;
 
     error = validateFolderId(folderId);
-    if (validateFolderId) {
-      res.status(400).json({ msg: "Invalid Id" });
+    if (error) {
+      res.status(400).json({ msg: error });
     }
     error = validateFolder(req.body);
     if (error) {
       res.status(400).json({ error: error });
     }
 
-    const folderExits = await Folder.findOne({ where: { id: folderId } });
-    if (folderExits) {
-      const folder = await folderExits.update({
-        name: name,
-        type: type,
-        maxFileLimit: maxFileLimit,
-      });
-
-      res
-        .status(200)
-        .json({ msg: "Folder updated succesfully", folder: folder });
-    } else {
+    const folderExits = await Folder.findOne({ where: { folderId: folderId } });
+    if (!folderExits) {
       res.status(400).json({ msg: "FolderId not exists" });
     }
+
+    const folder = await Folder.update(
+      {
+        name: name,
+        type: type,
+        maxFileLimit: parseInt(maxFileLimit),
+      },
+      {
+        where: { folderId: folderId },
+        returning: true,
+      }
+    );
+    console.log(folder);
+    return res
+      .status(200)
+      .json({ msg: "Folder updated succesfully", folder: folder });
   } catch (error) {
-    res.status(500).json({ error: "Folder not found" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -74,7 +82,7 @@ const deleteFolder = async (req, res) => {
     if (error) {
       res.status(400).json({ msg: error });
     }
-    const folderExits = await Folder.findOne({ where: { id: folderId } });
+    const folderExits = await Folder.findOne({ where: { folderId: folderId } });
     if (folderExits) {
       await folderExits.destroy({
         where: { id: folderId },

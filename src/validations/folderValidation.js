@@ -28,4 +28,4 @@ const validateFolderId = (folderId) => {
   }
 };
 
-module.exports = { validateFolder };
+module.exports = { validateFolder, validateFolderId };
